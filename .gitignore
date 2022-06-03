@@ -1,0 +1,9 @@
+raw_data/*
+__pycache__/
+build/
+dist/
+*.swp
+*.mypy_cache
+*.egg-info
+*.ipynb_checkpoints
+*.db
