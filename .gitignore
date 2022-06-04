@@ -1,5 +1,6 @@
 raw_data/*
 !.gitkeep
+!raw_data/dump_db.py
 __pycache__/
 build/
 dist/
