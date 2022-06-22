@@ -28,14 +28,18 @@ class VENUS_Bayesian_Optimization():
         self._setpoint(params)
         time.sleep(self._wait_time)
 
+        # TODO get statistics on all data
+        # TODO save to db
         fcv1_i_data = []
         end_time = time.time() + self._sample_time
         while time.time() < end_time:
             fcv1_i_data.append(self._venus.read(["fcv1_i"]))
 
         # all are sample statistics
-        mean = statistics.mean(fcv1_i_data)
-        standard_deviation = statistics.stdev(fcv1_i_data)
+        fcv1_micro_i_data = list(map(lambda x: x * 1e6, fcv1_i_data))
+
+        mean = statistics.mean(fcv1_micro_i_data)
+        standard_deviation = statistics.stdev(fcv1_micro_i_data)
         relative_standard_deviation = sd / mean
         size = len(fcv1_i_data)
 
@@ -47,7 +51,6 @@ class VENUS_Bayesian_Optimization():
         # Possible alternative objective functions
         # Signal to Noise Ratio?
         # Lower Confidence Limit?
-        # Upper Condifence Limit? (If we want more noise)
 
         return(output)
 
@@ -59,12 +62,9 @@ if "__main__" == __name__:
     SEED = 42
 
     # TODO
-    # Keithly Picoammeter 6485
-    # "keithley picoammeter 6485 manual" -> search "rms noise" (make sure not 6487 ammeter)
-    # OK, problem, the standard deviation error depends on the order of magnitude output of the ammeter so we can't
-    # really set an alpha (variance) for bayesian optimization because it varies by several orders of magnitude
-    # Also we would need to set this variance in terms of the objective_function
-    # Ask Alex if confused about this comment
+    # "keithley Picoammeter 6485 Manual" -> search "rms noise"
+    # problem: standard deviation is dependent on the current being measured and can change by a lot
+    # solution: ignore the ammeter noise because it's basically 0?
     keithley_picoammeter_6485_relative_standard_error = 0.1
     variance = 0.01 # TODO this is wrong
 
