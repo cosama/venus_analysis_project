@@ -152,27 +152,27 @@ class VENUS_Bayesian_Optimization:
                 if done:
                     return
 
-                for solenoid_var in SOLENOID_VARS:
-                    # if small error
-                    # TODO if small error, shouldn't we just be done?
-                    # and if the error isn't small enough, shouldn' t we just call it big error
-                    if (
-                        not done[solenoid_var]
-                        and abs(
-                            read_solenoid_var[solenoid_var]
-                            - requested_vars[solenoid_var]
-                        )
-                        < MEDIUM_DIFF
-                    ):
-                        # TODO here we use current direction instead of initial direction for some reason
-                        # instead I think it would be better to use initial direction, like in the rest of the code
-                        set_solenoid_i[solenoid_var] = set_solenoid_i[
-                            solenoid_var
-                        ] - MEDIUM_OVERSHOOT * math.copysign(
-                            1,
-                            read_solenoid_var[solenoid_var]
-                            - requested_vars[solenoid_var],
-                        )
+            for solenoid_var in SOLENOID_VARS:
+                # if small error
+                # TODO if small error, shouldn't we just be done?
+                # and if the error isn't small enough, shouldn' t we just call it big error
+                if (
+                    not done[solenoid_var]
+                    and abs(
+                        read_solenoid_var[solenoid_var]
+                        - requested_vars[solenoid_var]
+                    )
+                    < MEDIUM_DIFF
+                ):
+                    # TODO here we use current direction instead of initial direction for some reason
+                    # instead I think it would be better to use initial direction, like in the rest of the code
+                    set_solenoid_i[solenoid_var] = set_solenoid_i[
+                        solenoid_var
+                    ] - MEDIUM_OVERSHOOT * math.copysign(
+                        1,
+                        read_solenoid_var[solenoid_var]
+                        - requested_vars[solenoid_var],
+                    )
 
     def objective_function(self, params):
         self._setpoint(params)
