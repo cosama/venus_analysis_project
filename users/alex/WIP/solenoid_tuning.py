@@ -201,7 +201,6 @@ class Venus:
         Pext = venus.read(["ext_mbar"])  # pressure just outside source [torr]
         HHe = venus.read(["four_k_heater_power"])  # liquid He heater power [W]
 
-        # TODO: write to database or somewhere
         output_file.write(
             "%7.1f %12.3f %12.3f %10.4f %10.4f %8.2e %8.2e %7.2f %7.2f %7.2f %7.2f %7.1f\n"
             % (
