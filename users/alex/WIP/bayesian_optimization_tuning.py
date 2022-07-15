@@ -42,6 +42,7 @@ class VENUS_Bayesian_Optimization:
         self.write({"fast_sol_i": write_solenoid_vars})
 
     def objective_function(self, params):
+        # TODO catch errors
         self._setpoint(params)
         time.sleep(self._wait_time)
 
