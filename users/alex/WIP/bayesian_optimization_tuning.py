@@ -32,14 +32,12 @@ class VENUS_Bayesian_Optimization:
         self._db = dbwriter.DBWriter(database_name)
         self._db.create_table(self._table_name, column_name_types)
 
-
-
     def _setpoint(self, requested_vars):
         self.write(requested_vars)
-        SOLENOID_VARS = ["inj_i", "ext_i", "mid_i"] # TODO sext
+        SOLENOID_VARS = ["inj_i", "ext_i", "mid_i"] # TODO @damon add sext
         write_solenoid_vars = dict(filter(lambda x: x[0] in SOLENOID_VARS, requested_vars.items()))
 
-        self.write({"fast_sol_i": write_solenoid_vars})
+        self._venus.meta({"fast_sol_i": write_solenoid_vars})
 
     def objective_function(self, params):
         # TODO catch errors
@@ -72,6 +70,8 @@ class VENUS_Bayesian_Optimization:
         size = len(fcv1_i_data)
 
         # TODO explain why all the constants
+        # TODO incorporate hyperparameter that determines how important it is to lower noise
+        # TODO want to minimize standard deviation given a minimum current output
         BEAM_CURR_STD = 30
         instability_cost = BEAM_CURR_STD * 0.5 * (20 * relative_standard_deviation) ** 2
         output = mean - instability_cost
@@ -88,13 +88,10 @@ if "__main__" == __name__:
     wait_time = 60  # seconds
     sample_time = 10  # seconds
     SEED = 42
+    # TODO add gui that can be used via X11 forwarding
 
-    # TODO
-    # "keithley Picoammeter 6485 Manual" -> search "rms noise"
-    # problem: standard deviation is dependent on the current being measured and can change by a lot
-    # solution: noise is very very small, basically negligible (0.1%) => ignore the ammeter noise
     keithley_picoammeter_6485_relative_standard_error = 0.1
-    variance = 0.01  # TODO change this to zero or very small number
+    variance = 0.01 # TODO change this to very small number
 
     venus = VENUS_Bayesian_Optimization(var_bounds, SEED, wait_time, sample_time)
 
