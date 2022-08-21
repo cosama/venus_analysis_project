@@ -50,6 +50,7 @@ if "__main__" == __name__:
     train_x, test_x, train_y, test_y = sklearn.model_selection.train_test_split(x, y, test_size=test_size)
     dimensions = train_x.dim(0) # TODO check
 
+    # Harvey's code: https://github.com/yubinhu/VENUS-Project/blob/main/Main.ipynb
     # TODO https://github.com/ChristopherMayes/Xopt/blob/main/docs/examples/bayes_opt/mobo.ipynb
     # TODO https://github.com/ChristopherMayes/Xopt/blob/main/docs/examples/bayes_opt/time_dependent_bo.ipynb
 
