@@ -1,0 +1,4 @@
+watch_data was collected with timestamps that didn't have the least significant decimal places
+so it is a special case in the clean data script
+
+put timeinfo and all the watch_data files into this

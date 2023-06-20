@@ -1,6 +1,3 @@
-raw_data/*
-!.gitkeep
-!raw_data/*.py
 __pycache__/
 build/
 dist/
@@ -9,4 +6,4 @@ dist/
 *.egg-info
 *.ipynb_checkpoints
 *.db
-*.DS_store
+.DS_Store
