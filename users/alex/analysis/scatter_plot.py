@@ -1,30 +1,19 @@
 import argparse
-import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
-data_dir = "../../../clean_data/vary_pressure_and_bias_voltage/"
-plot_dir = "./plots/"
-
-# Define the dimension limits dictionary
-dimension_limits = {
-    "bias_v": {"min": 0, "max": 175},
-    "bias_i": {"min": 0, "max": 20},
-    "inj_mbar": {"min": 0, "max": 2e-6},
-    "extraction_i": {"min": 0, "max": 12},
-}
+import pandas as pd
+import re
 
 
-def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col, z_col, stepsize, csv_filenames):
+
+def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col, z_col, step_size, dimension_limits):
     # Read the CSV files and column names
     names = list(pd.read_csv(data_dir + column_names_file, delimiter=", "))
     dfs = [pd.read_csv(data_dir + csv_file, names=names, delimiter=" ") for csv_file in csv_files]
     df_combined = pd.concat(dfs)
 
-    # if not we reach the limit on file lengths in ext4 filesystems
-    # just grabs the run number
-    # could use regex, but this is currently a quick and dirty script
-    shortened_csv_filenames = list(map(lambda x: x[11:13], csv_filenames))
+    # Use regex to extract the run number from the filenames
+    shortened_csv_filenames = [re.search(r"watch_data_(.*?)_clean", csv_file).group(1) for csv_file in csv_files]
 
     # Extract the column values
     w = df_combined[w_col].values
@@ -49,7 +38,7 @@ def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col,
         ax.set_zlim(dimension_limits[y_col]["min"], dimension_limits[y_col]["max"])
 
     # Save pictures for each rotation angle
-    for angle in range(0, 360, int(stepsize)):
+    for angle in range(0, 360, int(step_size)):
         ax.view_init(elev=30, azim=angle)  # Set the elevation and azimuth angles
         csv_filenames_str = "_".join(shortened_csv_filenames)
         filename = f"{plot_dir}scatter_plot_{w_col}_{x_col}_{y_col}_{z_col}_{csv_filenames_str}_angle_{angle}.png"
@@ -58,24 +47,40 @@ def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col,
 
     plt.close(fig)
 
-def parse_arguments_file(args_file, delimiter=","):
-    arguments_list = []
-    with open(args_file, "r") as file:
-        lines = file.readlines()
-    for line in lines:
-        arguments = line.strip().split(delimiter)
-        arguments_list.append(arguments)
-    return arguments_list
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate and save rotated scatter plots")
-    parser.add_argument("args_file", type=str, help="File containing arguments")
+    # data directory
+    data_dir = "../../../clean_data/vary_pressure_and_bias_voltage/"
+    plot_dir = "./plots/"
 
+    # define the dimension limits dictionary
+    dimension_limits = {
+        "bias_v": {"min": 0, "max": 80},
+        "bias_i": {"min": 0, "max": 20},
+        "inj_mbar": {"min": 0, "max": 3e-7},
+        "extraction_i": {"min": 0, "max": 12},
+    }
+
+    # parse cli
+    parser = argparse.ArgumentParser(description="Generate and save rotated scatter plots")
+    parser.add_argument("--w_col", type=str, help="Name of the column for 'w'")
+    parser.add_argument("--x_col", type=str, help="Name of the column for 'x'")
+    parser.add_argument("--y_col", type=str, help="Name of the column for 'y'")
+    parser.add_argument("--z_col", type=str, help="Name of the column for 'z'")
+    parser.add_argument("--step_size", default=10, type=int, help="Size of rotation step in degrees")
+    parser.add_argument("--column_names_file", default="column_names", type=str, help="CSV file that has the column names")
+    parser.add_argument("--filenames", nargs="+", help="List of CSV filenames")
     args = parser.parse_args()
 
-    argument_sets = parse_arguments_file(args.args_file, ", ")
-    for arguments in argument_sets:
-        column_names_file, w_col, x_col, y_col, z_col, stepsize, *csv_files = arguments
-
-        save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col, z_col, stepsize, csv_files)
-
+    # run function
+    save_rotated_scatter_plot(
+        args.filenames,
+        args.column_names_file,
+        args.w_col,
+        args.x_col,
+        args.y_col,
+        args.z_col,
+        args.step_size,
+        dimension_limits
+    )
