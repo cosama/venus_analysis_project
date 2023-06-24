@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-data_dir = "../../clean_data/vary_pressure_and_bias_voltage/"
+data_dir = "../../../clean_data/vary_pressure_and_bias_voltage/"
 plot_dir = "./plots/"
 
 # Define the dimension limits dictionary
