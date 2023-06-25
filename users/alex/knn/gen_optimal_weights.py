@@ -43,22 +43,23 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
     best_weights = np.ones(column_names.shape[0] - len(predict_columns))
 
     dataframes = read_csv_files(csv_files, column_names)
+    x_dataframes = list(map(lambda x: x.drop(predict_columns, axis=1).values, dataframes))
+    y_dataframes = list(map(lambda x: x[predict_columns].values, dataframes))
 
 
     for _ in range(num_epochs):
         total_loss = 0.0
         for i, test_dataframe in enumerate(dataframes):
-            train_dataframes = dataframes[:i] + dataframes[i + 1:]
+            x_train_dataframes = dataframes[:i] + dataframes[i + 1:]
+            y_train_dataframes = dataframes[:i] + dataframes[i + 1:]
 
-            train_df = pd.concat(train_dataframes)
             # Read training data
-            x_train = train_df.drop(predict_columns, axis=1).values
-            y_train = train_df[predict_columns].values
+            x_train = pd.concat(x_train_dataframes)
+            y_train = pd.concat(y_train_dataframes)
 
-            # Read test data
-            test_df = test_dataframe
-            x_test = test_df.drop(predict_columns, axis=1).values
-            y_test = test_df[predict_columns].values
+            # Read testing data
+            x_test = x_dataframes[i]
+            y_test = y_dataframes[i]
 
             # Generate random weights
             weights = np.abs(best_weights + np.random.normal(0, 10, size=best_weights.shape))
@@ -82,17 +83,16 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
             print(best_weights)
 
     for i, test_dataframe in enumerate(dataframes):
-        train_dataframes = dataframes[:i] + dataframes[i + 1:]
+        x_train_dataframes = dataframes[:i] + dataframes[i + 1:]
+        y_train_dataframes = dataframes[:i] + dataframes[i + 1:]
 
         # Read training data
-        train_df = pd.concat(train_dataframes)
-        x_train = train_df.drop(predict_columns, axis=1).values
-        y_train = train_df[predict_columns].values
+        x_train = pd.concat(x_train_dataframes)
+        y_train = pd.concat(y_train_dataframes)
 
-        # Read test data
-        test_df = test_dataframe
-        x_test = test_df.drop(predict_columns, axis=1).values
-        y_test = test_df[predict_columns].values
+        # Read testing data
+        x_test = x_dataframes[i]
+        y_test = y_dataframes[i]
 
         # Train the KNN regression model with the best weights
         knn_model = knn.KNNRegressionModel(x_train, y_train, weights=best_weights)
