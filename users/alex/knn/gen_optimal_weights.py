@@ -54,8 +54,8 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
             y_train_dataframes = y_dataframes[:i] + y_dataframes[i + 1:]
 
             # Read training data
-            x_train = pd.concat(x_train_dataframes)
-            y_train = pd.concat(y_train_dataframes)
+            x_train = np.concatenate(x_train_dataframes)
+            y_train = np.concatenate(y_train_dataframes)
 
             # Read testing data
             x_test = x_dataframes[i]
@@ -87,8 +87,8 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
         y_train_dataframes = y_dataframes[:i] + y_dataframes[i + 1:]
 
         # Read training data
-        x_train = pd.concat(x_train_dataframes)
-        y_train = pd.concat(y_train_dataframes)
+        x_train = np.concatenate(x_train_dataframes)
+        y_train = np.concatenate(y_train_dataframes)
 
         # Read testing data
         x_test = x_dataframes[i]
