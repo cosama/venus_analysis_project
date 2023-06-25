@@ -13,7 +13,7 @@ def read_csv_files(csv_files, column_names):
     dfs = []
     for csv_file in csv_files:
         dfs.append(pd.read_csv(csv_file, names=column_names, delimiter=" "))
-    return pd.concat(dfs)
+    return dfs
 
 
 
@@ -42,19 +42,21 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
     best_loss = float('inf')
     best_weights = np.ones(column_names.shape[0] - len(predict_columns))
 
+    dataframes = read_csv_files(csv_files, column_names)
+
 
     for _ in range(num_epochs):
         total_loss = 0.0
-        for i, test_csv_file in enumerate(csv_files):
-            train_csv_files = csv_files[:i] + csv_files[i + 1:]
+        for i, test_dataframe in enumerate(dataframes):
+            train_dataframes = dataframes[:i] + dataframes[i + 1:]
 
+            train_df = pd.concat(train_dataframes)
             # Read training data
-            train_df = read_csv_files(train_csv_files, column_names)
             x_train = train_df.drop(predict_columns, axis=1).values
             y_train = train_df[predict_columns].values
 
             # Read test data
-            test_df = pd.read_csv(test_csv_file, names=column_names, delimiter=" ")
+            test_df = test_dataframe
             x_test = test_df.drop(predict_columns, axis=1).values
             y_test = test_df[predict_columns].values
 
@@ -79,16 +81,16 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
             best_weights = weights
             print(best_weights)
 
-    for i, test_csv_file in enumerate(csv_files):
-        train_csv_files = csv_files[:i] + csv_files[i + 1:]
+    for i, test_dataframe in enumerate(dataframes):
+        train_dataframes = dataframes[:i] + dataframes[i + 1:]
 
         # Read training data
-        train_df = read_csv_files(train_csv_files, column_names)
+        train_df = pd.concat(train_dataframes)
         x_train = train_df.drop(predict_columns, axis=1).values
         y_train = train_df[predict_columns].values
 
         # Read test data
-        test_df = pd.read_csv(test_csv_file, names=column_names, delimiter=" ")
+        test_df = test_dataframe
         x_test = test_df.drop(predict_columns, axis=1).values
         y_test = test_df[predict_columns].values
 
