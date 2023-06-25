@@ -64,13 +64,13 @@ if __name__ == "__main__":
 
     # parse cli
     parser = argparse.ArgumentParser(description="Generate and save rotated scatter plots")
-    parser.add_argument("--w_col", type=str, help="Name of the column for 'w'")
-    parser.add_argument("--x_col", type=str, help="Name of the column for 'x'")
-    parser.add_argument("--y_col", type=str, help="Name of the column for 'y'")
-    parser.add_argument("--z_col", type=str, help="Name of the column for 'z'")
+    parser.add_argument("--w_col", type=str, required=True, help="Name of the column for 'w'")
+    parser.add_argument("--x_col", type=str, required=True, help="Name of the column for 'x'")
+    parser.add_argument("--y_col", type=str, required=True, help="Name of the column for 'y'")
+    parser.add_argument("--z_col", type=str, required=True, help="Name of the column for 'z'")
     parser.add_argument("--step_size", default=10, type=int, help="Size of rotation step in degrees")
     parser.add_argument("--column_names_file", default="column_names", type=str, help="CSV file that has the column names")
-    parser.add_argument("--filenames", nargs="+", help="List of CSV filenames")
+    parser.add_argument("--filenames", nargs="+", required=True, help="List of CSV filenames")
     args = parser.parse_args()
 
     # run function
