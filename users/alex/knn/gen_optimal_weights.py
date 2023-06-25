@@ -50,8 +50,8 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
     for _ in range(num_epochs):
         total_loss = 0.0
         for i, test_dataframe in enumerate(dataframes):
-            x_train_dataframes = dataframes[:i] + dataframes[i + 1:]
-            y_train_dataframes = dataframes[:i] + dataframes[i + 1:]
+            x_train_dataframes = x_dataframes[:i] + x_dataframes[i + 1:]
+            y_train_dataframes = y_dataframes[:i] + y_dataframes[i + 1:]
 
             # Read training data
             x_train = pd.concat(x_train_dataframes)
@@ -83,8 +83,8 @@ def train_and_test_knn(csv_files, column_names, predict_columns, num_epochs):
             print(best_weights)
 
     for i, test_dataframe in enumerate(dataframes):
-        x_train_dataframes = dataframes[:i] + dataframes[i + 1:]
-        y_train_dataframes = dataframes[:i] + dataframes[i + 1:]
+        x_train_dataframes = x_dataframes[:i] + x_dataframes[i + 1:]
+        y_train_dataframes = y_dataframes[:i] + y_dataframes[i + 1:]
 
         # Read training data
         x_train = pd.concat(x_train_dataframes)
