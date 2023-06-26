@@ -25,7 +25,8 @@ if __name__ == "__main__":
 
     # get other columns
     column_names = list(pd.read_csv(column_names_file, delimiter=", "))
-    input_columns = list(filter(lambda x: x not in predict_columns, column_names))
+    input_columns = ["inj_mbar", "bias_v", "bias_i", "extraction_i"] + ["k18_fw", "k18_ref", "g28_fw", "puller_i", "extraction_i"] #+ ["inj_i", "ext_i", "mid_i", "sext_i", "x_ray_source", "x_ray_exit"]
+    #input_columns = list(filter(lambda x: x not in predict_columns, column_names))
 
     # Read training data
     tmp = []
