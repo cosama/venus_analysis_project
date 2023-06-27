@@ -40,7 +40,7 @@ if __name__ == "__main__":
     y_test = test_df[predict_columns].values
 
     # Create and train the Random Forest regression model
-    rf_model = RandomForestRegressor(n_estimators=100)
+    rf_model = RandomForestRegressor(n_estimators=100, n_jobs=-1)
     rf_model.fit(x_train, y_train)
 
     # Predict on the test data with a progress bar
