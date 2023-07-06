@@ -8,7 +8,15 @@ import pandas as pd
 
 
 
-def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_col, y_col, z_col, a_col, step_size, elevations, dimension_limits):
+def check_files_with_prefix(directory, prefix):
+    for filename in os.listdir(directory):
+        if filename.startswith(prefix):
+            return True
+    return False
+
+
+
+def save_rotated_scatter_plot(df_list, filename_prefix, x_col, y_col, z_col, a_col, step_size, elevations, dimension_limits):
     # Combine the parquet files
     df_combined = pd.concat(df_list)
 
@@ -38,8 +46,7 @@ def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_
     for angle in range(0, 360, int(step_size)):
         for elevation in elevations:
             ax.view_init(elev=elevation, azim=angle)
-            parquet_filenames_str = "_".join(shortened_parquet_filenames)
-            filename = f"{plot_dir}scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_elevation_{elevation}_angle_{angle}.png"
+            filename = f"{filename_prefix}_elevation_{elevation}_angle_{angle}.png"
             plt.savefig(filename)
             print(f"Saved {filename}")
 
@@ -75,17 +82,20 @@ if __name__ == "__main__":
 
     # Use regex to extract the run from the filenames
     shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames]
+    parquet_filenames_str = "_".join(shortened_parquet_filenames)
 
-    # run function
-    save_rotated_scatter_plot(
-        df_list,
-        shortened_parquet_filenames,
-        plot_dir,
-        args.x_col,
-        args.y_col,
-        args.z_col,
-        args.a_col,
-        args.step_size,
-        args.elevations,
-        dimension_limits
-    )
+    filename_prefix = f"scatter_plot_{args.x_col}_{args.y_col}_{args.z_col}_{args.a_col}_{parquet_filenames_str}_"
+
+    if not check_files_with_prefix(plot_dir, filename_prefix):
+        # run function
+        save_rotated_scatter_plot(
+            df_list,
+            plot_dir + filename_prefix,
+            args.x_col,
+            args.y_col,
+            args.z_col,
+            args.a_col,
+            args.step_size,
+            args.elevations,
+            dimension_limits
+        )
