@@ -21,7 +21,7 @@ def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_
     # Create the 3D scatter plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    scatter = ax.scatter(x, y, z, c=a, cmap="hot")
+    scatter = ax.scatter(x, y, z, c=a, cmap="cool")
     ax.set_xlabel(x_col)
     ax.set_ylabel(y_col)
     ax.set_zlabel(z_col)
