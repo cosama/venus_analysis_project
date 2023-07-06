@@ -8,7 +8,7 @@ import pandas as pd
 
 
 
-def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_col, y_col, z_col, a_col, step_size, dimension_limits):
+def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_col, y_col, z_col, a_col, step_size, elevations, dimension_limits):
     # Combine the parquet files
     df_combined = pd.concat(df_list)
 
@@ -36,11 +36,12 @@ def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_
 
     # Save pictures for each rotation angle
     for angle in range(0, 360, int(step_size)):
-        ax.view_init(elev=30, azim=angle)  # Set the elevation and azimuth angles
-        parquet_filenames_str = "_".join(shortened_parquet_filenames)
-        filename = f"{plot_dir}scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_angle_{angle}.png"
-        plt.savefig(filename)
-        print(f"Saved {filename}")
+        for elevation in elevations:
+            ax.view_init(elev=elevation, azim=angle)
+            parquet_filenames_str = "_".join(shortened_parquet_filenames)
+            filename = f"{plot_dir}scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_angle_{elevation}_{angle}.png"
+            plt.savefig(filename)
+            print(f"Saved {filename}")
 
     plt.close(fig)
 
@@ -65,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--z_col", type=str, required=True, help="Name of the column for 'z'")
     parser.add_argument("--a_col", type=str, required=True, help="Name of the column for 'a'")
     parser.add_argument("--step_size", default=10, type=int, help="Size of rotation step in degrees")
+    parser.add_argument("--elevations", default=[30], type=int, nargs="+", help="Elevations of the camera")
     parser.add_argument("--filenames", nargs="+", required=True, help="List of Parquet filenames")
     args = parser.parse_args()
 
@@ -84,5 +86,6 @@ if __name__ == "__main__":
         args.z_col,
         args.a_col,
         args.step_size,
+        args.elevations,
         dimension_limits
     )
