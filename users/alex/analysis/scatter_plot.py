@@ -39,7 +39,7 @@ def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, x_
         for elevation in elevations:
             ax.view_init(elev=elevation, azim=angle)
             parquet_filenames_str = "_".join(shortened_parquet_filenames)
-            filename = f"{plot_dir}scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_angle_{elevation}_{angle}.png"
+            filename = f"{plot_dir}scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_elevation_{elevation}_angle_{angle}.png"
             plt.savefig(filename)
             print(f"Saved {filename}")
 
