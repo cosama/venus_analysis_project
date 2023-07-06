@@ -77,9 +77,6 @@ if __name__ == "__main__":
     parser.add_argument("--filenames", nargs="+", required=True, help="List of Parquet filenames")
     args = parser.parse_args()
 
-    # Read the parquet files into memory
-    df_list = [pd.read_parquet(parquet_file) for parquet_file in args.filenames]
-
     # Use regex to extract the run from the filenames
     shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames]
     parquet_filenames_str = "_".join(shortened_parquet_filenames)
@@ -87,6 +84,9 @@ if __name__ == "__main__":
     filename_prefix = f"scatter_plot_{args.x_col}_{args.y_col}_{args.z_col}_{args.a_col}_{parquet_filenames_str}_"
 
     if not check_files_with_prefix(plot_dir, filename_prefix):
+        # Read the parquet files into memory
+        df_list = [pd.read_parquet(parquet_file) for parquet_file in args.filenames]
+
         # run function
         save_rotated_scatter_plot(
             df_list,
