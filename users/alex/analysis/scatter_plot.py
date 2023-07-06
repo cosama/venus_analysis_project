@@ -6,14 +6,9 @@ import re
 
 
 
-def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col, z_col, step_size, dimension_limits):
-    # Read the CSV files and column names
-    names = list(pd.read_csv(data_dir + column_names_file, delimiter=", "))
-    dfs = [pd.read_csv(data_dir + csv_file, names=names, delimiter=" ") for csv_file in csv_files]
+def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, w_col, x_col, y_col, z_col, step_size, dimension_limits):
+    # Combine the parquet files
     df_combined = pd.concat(dfs)
-
-    # Use regex to extract the run number from the filenames
-    shortened_csv_filenames = [re.search(r"watch_data_(.*?)_clean", csv_file).group(1) for csv_file in csv_files]
 
     # Extract the column values
     w = df_combined[w_col].values
@@ -40,8 +35,8 @@ def save_rotated_scatter_plot(csv_files, column_names_file, w_col, x_col, y_col,
     # Save pictures for each rotation angle
     for angle in range(0, 360, int(step_size)):
         ax.view_init(elev=30, azim=angle)  # Set the elevation and azimuth angles
-        csv_filenames_str = "_".join(shortened_csv_filenames)
-        filename = f"{plot_dir}scatter_plot_{w_col}_{x_col}_{y_col}_{z_col}_{csv_filenames_str}_angle_{angle}.png"
+        parquet_filenames_str = "_".join(shortened_parquet_filenames)
+        filename = f"{plot_dir}scatter_plot_{w_col}_{x_col}_{y_col}_{z_col}_{parquet_filenames_str}_angle_{angle}.png"
         plt.savefig(filename)
         print(f"Saved {filename}")
 
@@ -69,14 +64,19 @@ if __name__ == "__main__":
     parser.add_argument("--y_col", type=str, required=True, help="Name of the column for 'y'")
     parser.add_argument("--z_col", type=str, required=True, help="Name of the column for 'z'")
     parser.add_argument("--step_size", default=10, type=int, help="Size of rotation step in degrees")
-    parser.add_argument("--column_names_file", default="column_names", type=str, help="CSV file that has the column names")
-    parser.add_argument("--filenames", nargs="+", required=True, help="List of CSV filenames")
+    parser.add_argument("--filenames", nargs="+", required=True, help="List of Parquet filenames")
     args = parser.parse_args()
+
+    # Read the parquet files into memory
+    df_list = [pd.read_parquet(data_dir + parquet_file) for parquet_file in args.filenames]
+
+    # Use regex to extract the run from the filenames
+    shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", parquet_file).group(1) for parquet_file in args.filenames]
 
     # run function
     save_rotated_scatter_plot(
-        args.filenames,
-        args.column_names_file,
+        df_list,
+        shortened_parquet_filenames,
         args.w_col,
         args.x_col,
         args.y_col,
