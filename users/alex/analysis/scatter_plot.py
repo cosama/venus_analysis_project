@@ -8,15 +8,22 @@ import pandas as pd
 
 
 
-def check_files_with_prefix(directory, prefix):
+def filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
+    for angle in range(0, 360, int(step_size)):
+        for elevation in elevations:
+            yield(f"scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_elevation_{elevation}_angle_{angle}.png", elevation, angle)
+
+
+
+def check_file_exists_in_dir(directory, check_filename):
     for filename in os.listdir(directory):
-        if filename.startswith(prefix):
+        if filename == check_filename:
             return True
     return False
 
 
 
-def save_rotated_scatter_plot(df_list, filename_prefix, x_col, y_col, z_col, a_col, step_size, elevations, dimension_limits):
+def save_rotated_scatter_plot(df_list, plot_dir, parquet_filenames_str, x_col, y_col, z_col, a_col, step_size, elevations, dimension_limits):
     # Combine the parquet files
     df_combined = pd.concat(df_list)
 
@@ -43,12 +50,11 @@ def save_rotated_scatter_plot(df_list, filename_prefix, x_col, y_col, z_col, a_c
         ax.set_zlim(dimension_limits[z_col]["min"], dimension_limits[z_col]["max"])
 
     # Save pictures for each rotation angle
-    for angle in range(0, 360, int(step_size)):
-        for elevation in elevations:
-            ax.view_init(elev=elevation, azim=angle)
-            filename = f"{filename_prefix}_elevation_{elevation}_angle_{angle}.png"
-            plt.savefig(filename)
-            print(f"Saved {filename}")
+    for (filename, elevation, angle) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
+        ax.view_init(elev=elevation, azim=angle)
+        filename_and_path = f"{plot_dir}{filename}"
+        plt.savefig(filename_and_path)
+        print(f"Saved {filename}")
 
     plt.close(fig)
 
@@ -81,16 +87,21 @@ if __name__ == "__main__":
     shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames]
     parquet_filenames_str = "_".join(shortened_parquet_filenames)
 
-    filename_prefix = f"scatter_plot_{args.x_col}_{args.y_col}_{args.z_col}_{args.a_col}_{parquet_filenames_str}_"
+    # Check if we have all the files we want to generate
+    have_all_files = True
+    for filename, _, _ in filename_generator(args.x_col, args.y_col, args.z_col, args.a_col, parquet_filenames_str, args.elevations, args.step_size): 
+        have_all_files = have_all_files and check_file_exists_in_dir(plot_dir, filename)
 
-    if not check_files_with_prefix(plot_dir, filename_prefix):
+    # Create the files if we don't have them
+    if not have_all_files:
         # Read the parquet files into memory
         df_list = [pd.read_parquet(parquet_file) for parquet_file in args.filenames]
 
         # run function
         save_rotated_scatter_plot(
             df_list,
-            plot_dir + filename_prefix,
+            plot_dir,
+            parquet_filenames_str,
             args.x_col,
             args.y_col,
             args.z_col,
