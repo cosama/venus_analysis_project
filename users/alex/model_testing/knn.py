@@ -29,7 +29,7 @@ class KNNRegressor:
 
 
     def normalize(self, data):
-        if self.normalize:
+        if self.to_normalize:
             data = (data - self.minimum) / (self.maximum - self.minimum)
         return (data)
 
@@ -40,7 +40,7 @@ class KNNRegressor:
         return self.weights * data
 
 
-    def predict(self, data, k=3):
-        _, indices = self.kd_tree.query(self.weigh(self.normalize(data)).reshape(1, -1), k=k)
+    def predict(self, data):
+        _, indices = self.kd_tree.query(self.weigh(self.normalize(data)).reshape(1, -1), k=self.num_neighbors)
         k_nearest_labels = self.y_data[indices.flatten()]
         return np.mean(k_nearest_labels)
