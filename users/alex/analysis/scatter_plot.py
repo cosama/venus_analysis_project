@@ -1,14 +1,16 @@
 import argparse
+import os
+import re
+
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
-import re
 
 
 
-def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, w_col, x_col, y_col, z_col, step_size, dimension_limits):
+def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, plot_dir, w_col, x_col, y_col, z_col, step_size, dimension_limits):
     # Combine the parquet files
-    df_combined = pd.concat(dfs)
+    df_combined = pd.concat(df_list)
 
     # Extract the column values
     w = df_combined[w_col].values
@@ -46,7 +48,6 @@ def save_rotated_scatter_plot(df_list, shortened_parquet_filenames, w_col, x_col
 
 if __name__ == "__main__":
     # data directory
-    data_dir = "../../../clean_data/vary_pressure_and_bias_voltage/"
     plot_dir = "./plots/"
 
     # define the dimension limits dictionary
@@ -68,15 +69,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the parquet files into memory
-    df_list = [pd.read_parquet(data_dir + parquet_file) for parquet_file in args.filenames]
+    df_list = [pd.read_parquet(parquet_file) for parquet_file in args.filenames]
 
     # Use regex to extract the run from the filenames
-    shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", parquet_file).group(1) for parquet_file in args.filenames]
+    shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames]
 
     # run function
     save_rotated_scatter_plot(
         df_list,
         shortened_parquet_filenames,
+        plot_dir,
         args.w_col,
         args.x_col,
         args.y_col,
