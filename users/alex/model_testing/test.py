@@ -12,7 +12,7 @@ import knn
 
 
 
-def cli_parser(save_dir):
+def cli_parser():
     models = ["knn", "xgb"]
     parser = argparse.ArgumentParser(description="Test arbitrary models")
 
@@ -23,7 +23,7 @@ def cli_parser(save_dir):
     # Create subparsers so we can handle different cli
     knn_parser = subparsers.add_parser("knn", help="Options for k nearest neighbor regression")
     knn_parser.add_argument("--num_neighbors", required=True, type=int, help="Specify the number of neighbors to use")
-    knn_parser.add_argument("--to_normalize", required=True, type=bool, help="Specify the whether to normalize the input data")
+    knn_parser.add_argument("--to_normalize", required=True, type=int, help="Specify the whether to normalize the input data (0: False, 1: True)")
     #knn_parser.add_argument("--weights", required=True, type=float, nargs=85, help="Specify the file that contains the weights for each dimension")
 
     xgb_parser = subparsers.add_parser("xgb", help="Options for xgboost regression")
@@ -161,9 +161,9 @@ if __name__ == "__main__":
     save_dir = "./results/"
     predict_columns = ["fcv1_i"]
 
-    args = cli_parser(save_dir)
+    args = cli_parser()
 
-    csv_filename = save_dir + shorten_parquet_files(args.parquet_files)
+    csv_filename = save_dir + shorten_parquet_files(args.parquet_files) + "_" + args.model + ".csv"
 
 
     if not has_matching_parameter(csv_filename, generate_parameter_string(args)):
@@ -233,4 +233,4 @@ if __name__ == "__main__":
         n_list = [sum(n_list)] + n_list
 
 
-        save_data(csv_filename + "_" + args.model, args, label_list, mse_list, mae_list, mape_list, n_list)
+        save_data(csv_filename, args, label_list, mse_list, mae_list, mape_list, n_list)
