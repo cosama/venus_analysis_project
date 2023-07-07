@@ -104,7 +104,7 @@ def process_dataframes(df_list, input_columns, predict_columns):
 
 
 def create_model(model_args):
-    irrelevant_list = ["parquet_files", "model"]
+    irrelevant_list = ["parquet_files", "model"] # TODO?
     model_type = model_args.model
     if model_type == "knn":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
@@ -166,13 +166,17 @@ def generate_parameter_string(args):
 
 
 
-def has_matching_parameter(filename, param_string):
+def has_matching_parameters(filename, pretty_values):
     if not os.path.isfile(filename):
         return False
+
+    str_pretty_values = list(map(str, pretty_values))
+    length = len(str_pretty_values)
+
     with open(filename, "r") as csv_file:
         reader = csv.reader(csv_file)
         for row in reader:
-            if len(row) > 0 and row[0] == param_string:
+            if len(row) > 0 and row[:length] == str_pretty_values:
                 return True
     return False
 
@@ -187,7 +191,7 @@ if __name__ == "__main__":
     csv_filename = save_dir + shorten_parquet_files(args.parquet_files) + "_" + args.model + ".csv"
 
 
-    if not has_matching_parameter(csv_filename, generate_parameter_string(pretty_args)):
+    if not has_matching_parameters(csv_filename, list(vars(pretty_args).values())):
         df_list = read_parquets(args.parquet_files)
 
         # Get columns
