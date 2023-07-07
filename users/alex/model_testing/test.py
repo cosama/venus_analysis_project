@@ -1,7 +1,9 @@
 import argparse
+import copy
 import csv
 import os
 import re
+import sys
 
 import numpy as np
 import pandas as pd
@@ -21,11 +23,6 @@ def cli_parser():
     subparsers = parser.add_subparsers(dest="model", required=True, help="Model to use")
 
     # Create subparsers so we can handle different cli
-    knn_parser = subparsers.add_parser("knn", help="Options for k nearest neighbor regression")
-    knn_parser.add_argument("--num_neighbors", required=True, type=int, help="Specify the number of neighbors to use")
-    knn_parser.add_argument("--to_normalize", required=True, type=int, help="Specify the whether to normalize the input data (0: False, 1: True)")
-    #knn_parser.add_argument("--weights", required=True, type=float, nargs=85, help="Specify the file that contains the weights for each dimension")
-
     xgb_parser = subparsers.add_parser("xgb", help="Options for xgboost regression")
     xgb_parser.add_argument("--n_estimators", required=True, type=int, help="Specify the number of estimators to use")
     xgb_parser.add_argument("--max_depth", required=True, type=int, help="Specify the maximum depth of the tree")
@@ -43,12 +40,38 @@ def cli_parser():
     xgb_parser.add_argument("--num_boost_round", required=True, type=int, help="Specify the number of boosting iterations")
     xgb_parser.add_argument("--num_parallel_tree", required=True, type=int, help="Specify the number of trees to train in parallel")
 
-    args = parser.parse_args()
+    knn_parser = subparsers.add_parser("knn", help="Options for k nearest neighbor regression")
+    knn_parser.add_argument("--num_neighbors", required=True, type=int, help="Specify the number of neighbors to use")
+    knn_parser.add_argument("--to_normalize", required=True, type=int, help="Specify the whether to normalize the input data (0: False, 1: True)")
 
-    if 2 > len(args.parquet_files):
+    # TODO rewrite to be modular, maybe have an extract_column_names function, but would then also have to extract a parquet file multiple times, idk, think about it
+    tmp_args, _ = parser.parse_known_args()
+
+    if 2 > len(tmp_args.parquet_files):
         raise(ValueError("parquet_files argument must have at least 2 values"))
 
-    return(args)
+    # dynamically generate valid column names
+    column_names = list(filter(lambda x: x != "fcv1_i", pd.read_parquet(tmp_args.parquet_files[0], engine="fastparquet").columns)) # TODO clean up
+    # TODO weird bug when we do --fcv1_i it thinks we did --fcv1_in
+
+    for column in column_names:
+        knn_parser.add_argument(f"--{column}", default=0, type=float, help=f"Specify the weight value for {column} (default: 0)")
+
+    args = parser.parse_args()
+
+    pretty_args = copy.deepcopy(args)
+    delattr(pretty_args, "parquet_files")
+    delattr(pretty_args, "model")
+
+    if "knn" == args.model:
+        weights = []
+        for column in column_names:
+            weights.append(getattr(args, column))
+            delattr(args, column)
+
+        args.weights = np.asarray(weights)
+
+    return(args, pretty_args)
 
 
 
@@ -81,13 +104,13 @@ def process_dataframes(df_list, input_columns, predict_columns):
 
 
 def create_model(model_args):
-    irrelevant_args = ["parquet_files", "model"]
+    irrelevant_list = ["parquet_files", "model"]
     model_type = model_args.model
     if model_type == "knn":
-        relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_args}
+        relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
         return knn.KNNRegressor(**relevant_args)
     elif model_type == "xgb":
-        relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_args}
+        relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
         return xgboost.XGBRegressor(**relevant_args)
     else:
         raise ValueError("invalid model type")
@@ -106,6 +129,28 @@ def shorten_parquet_files(parquet_files):
 
 
 
+def save_data(filename, args, label_list, mse_list, mae_list, mape_list, n_list):
+    # Check if file already contains headers
+    file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
+
+    # Save the data to CSV
+    with open(filename, "a", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+
+        # Write headers only if file is empty
+        if not file_exists:
+            headers = list(vars(args).keys()) + ["Label", "MSE", "MAE", "MAPE", "N"] * len(label_list)
+            writer.writerow(headers)
+
+        row = list(vars(args).values())
+
+        for i in range(len(label_list)):
+            row.extend([label_list[i], mse_list[i], mae_list[i], mape_list[i], n_list[i]])
+
+        writer.writerow(row)
+
+
+
 def generate_parameter_string(args):
     param_string = ""
 
@@ -118,30 +163,6 @@ def generate_parameter_string(args):
         param_string += arg_str
 
     return param_string
-
-
-
-def save_data(filename, args, label_list, mse_list, mae_list, mape_list, n_list):
-    param_string = generate_parameter_string(args)
-
-    # Check if file already contains headers
-    file_exists = os.path.isfile(filename) and os.path.getsize(filename) > 0
-    
-    # Save the data to CSV
-    with open(filename, "a", newline="") as csv_file:
-        writer = csv.writer(csv_file)
-        
-        # Write headers only if file is empty
-        if not file_exists:
-            headers = ["Parameter"] + ["Label", "MSE", "MAE", "MAPE", "N"] * len(label_list)
-            writer.writerow(headers)
-        
-        row = [param_string]
-        
-        for i in range(len(label_list)):
-            row.extend([label_list[i], mse_list[i], mae_list[i], mape_list[i], n_list[i]])
-        
-        writer.writerow(row)
 
 
 
@@ -161,12 +182,12 @@ if __name__ == "__main__":
     save_dir = "./results/"
     predict_columns = ["fcv1_i"]
 
-    args = cli_parser()
+    args, pretty_args = cli_parser()
 
     csv_filename = save_dir + shorten_parquet_files(args.parquet_files) + "_" + args.model + ".csv"
 
 
-    if not has_matching_parameter(csv_filename, generate_parameter_string(args)):
+    if not has_matching_parameter(csv_filename, generate_parameter_string(pretty_args)):
         df_list = read_parquets(args.parquet_files)
 
         # Get columns
@@ -233,4 +254,4 @@ if __name__ == "__main__":
         n_list = [sum(n_list)] + n_list
 
 
-        save_data(csv_filename, args, label_list, mse_list, mae_list, mape_list, n_list)
+        save_data(csv_filename, pretty_args, label_list, mse_list, mae_list, mape_list, n_list)

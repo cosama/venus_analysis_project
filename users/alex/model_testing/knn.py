@@ -6,12 +6,13 @@ from sklearn.neighbors import KDTree
 
 
 class KNNRegressor:
-    def __init__(self, to_normalize, num_neighbors, weights=1):
+    def __init__(self, to_normalize, num_neighbors, weights):
         self.num_neighbors = num_neighbors
         self.to_normalize = to_normalize
         self.maximum = None
         self.minimum = None
         self.weights = weights
+
 
     def fit(self, x_data, y_data):
         if None == self.maximum:
