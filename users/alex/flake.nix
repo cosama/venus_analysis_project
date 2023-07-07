@@ -19,6 +19,7 @@
           pkgs.python310Packages.fastparquet
 
           pkgs.gnome.eog # view images
+          pkgs.libreoffice # view csv files
         ];
 
         shellHook = ''
