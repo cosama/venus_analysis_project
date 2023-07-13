@@ -17,6 +17,7 @@
           pkgs.python310Packages.tqdm
           pkgs.python310Packages.xgboost
           pkgs.python310Packages.fastparquet
+          pkgs.python310Packages.pillow
 
           pkgs.gnome.eog # view images
           pkgs.libreoffice # view csv files

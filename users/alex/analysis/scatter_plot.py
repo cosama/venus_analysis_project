@@ -4,14 +4,15 @@ import re
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
 import pandas as pd
-
+from PIL import Image
 
 
 def filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
-    for angle in range(0, 360, int(step_size)):
-        for elevation in elevations:
-            yield(f"scatter_plot_{x_col}_{y_col}_{z_col}_{a_col}_{parquet_filenames_str}_elevation_{elevation}_angle_{angle}.png", elevation, angle)
+    for elevation in elevations:
+        for angle in range(0, 360, int(step_size)):
+            yield(f"scatter_plot_x_{x_col}_y_{y_col}_z_{z_col}_a_{a_col}_files_{parquet_filenames_str}_elevation_{elevation}.gif", angle, elevation)
 
 
 
@@ -41,6 +42,9 @@ def save_rotated_scatter_plot(df_list, plot_dir, parquet_filenames_str, x_col, y
     ax.set_ylabel(y_col)
     ax.set_zlabel(z_col)
 
+    # Ideally would like to make the 1e-7 for inj_mbar appear in a better location
+    # https://github.com/matplotlib/matplotlib/issues/4476
+
     # Set the minimum and maximum values for each dimension
     if x_col in dimension_limits:
         ax.set_xlim(dimension_limits[x_col]["min"], dimension_limits[x_col]["max"])
@@ -49,12 +53,23 @@ def save_rotated_scatter_plot(df_list, plot_dir, parquet_filenames_str, x_col, y
     if z_col in dimension_limits:
         ax.set_zlim(dimension_limits[z_col]["min"], dimension_limits[z_col]["max"])
 
+    images = {}  # Store the images for each elevation
+
     # Save pictures for each rotation angle
-    for (filename, elevation, angle) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
+    for (filename, angle, elevation) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
         ax.view_init(elev=elevation, azim=angle)
-        filename_and_path = f"{plot_dir}{filename}"
-        plt.savefig(filename_and_path)
-        print(f"Saved {filename}")
+        fig.canvas.draw()
+
+        # Convert the plot to an image
+        image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
+        image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+        images.setdefault(elevation, []).append(Image.fromarray(image))
+
+        print(f"Generated angle={angle} elevation={elevation}")
+
+    # Save the images as GIF files for each elevation
+    for (filename, angle, elevation) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size=360):
+        images[elevation][0].save(plot_dir + filename, save_all=True, append_images=images[elevation][1:], optimize=False, duration=100, loop=0)
 
     plt.close(fig)
 
