@@ -6,6 +6,7 @@ import pandas as pd
 put_data_dir = "../../processed_data/vary_pressure_and_bias_voltage/"
 new_suffix = "_processed"
 old_suffix = "_clean"
+minimum_output = 1e-3
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Processes data files.")
@@ -24,7 +25,7 @@ for file_path in args.file_paths:
     maximum = data["fcv1_i"].max()
     minimum = data["fcv1_i"].min()
 
-    data["fcv1_i_normalized"] = (data["fcv1_i"] - minimum) / (maximum - minimum)
+    data["fcv1_i_normalized"] = (data["fcv1_i"] - minimum) / (maximum - minimum) + minimum_output
 
     data.to_parquet(put_file_path, compression=None)
 
