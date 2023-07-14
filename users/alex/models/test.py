@@ -16,11 +16,15 @@ import knn
 
 def cli_parser():
     models = ["knn", "xgb"]
-    parser = argparse.ArgumentParser(description="Test arbitrary models")
 
-    parser.add_argument("parquet_files", nargs="+", help="Parquet files")
+    parser = argparse.ArgumentParser(description="Test arbitrary models") # TODO stop using argparser and replace with something else
 
-    subparsers = parser.add_subparsers(dest="model", required=True, help="Model to use")
+    parser.add_argument("--parquet_files", required=True, nargs="+", help="Parquet files")
+    parser.add_argument("--predict_columns", default=["fcv1_i"], nargs="+", help="Column to predict")
+
+    parser.add_argument("--dummy", help="dummy variable bc python argparser is dumb")
+
+    subparsers = parser.add_subparsers(title="Model selector", dest="model", required=True, help="Model to use")
 
     # Create subparsers so we can handle different cli
     xgb_parser = subparsers.add_parser("xgb", help="Options for xgboost regression")
@@ -51,7 +55,7 @@ def cli_parser():
         raise(ValueError("parquet_files argument must have at least 2 values"))
 
     # dynamically generate valid column names
-    column_names = list(filter(lambda x: x != "fcv1_i", pd.read_parquet(tmp_args.parquet_files[0], engine="fastparquet").columns)) # TODO clean up
+    column_names = list(filter(lambda x: x not in tmp_args.predict_columns, pd.read_parquet(tmp_args.parquet_files[0], engine="fastparquet").columns)) # TODO clean up
     # TODO weird bug when we do --fcv1_i it thinks we did --fcv1_in
 
     for column in column_names:
@@ -61,7 +65,9 @@ def cli_parser():
 
     pretty_args = copy.deepcopy(args)
     delattr(pretty_args, "parquet_files")
+    delattr(pretty_args, "predict_columns")
     delattr(pretty_args, "model")
+    delattr(pretty_args, "dummy")
 
     if "knn" == args.model:
         weights = []
@@ -104,7 +110,7 @@ def process_dataframes(df_list, input_columns, predict_columns):
 
 
 def create_model(model_args):
-    irrelevant_list = ["parquet_files", "model"] # TODO?
+    irrelevant_list = ["parquet_files", "model", "predict_columns", "dummy"] # TODO?
     model_type = model_args.model
     if model_type == "knn":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
@@ -122,7 +128,7 @@ def shorten_parquet_files(parquet_files):
 
     for filename in parquet_files:
         base_name = os.path.basename(filename)
-        run_label = re.search(r"watch_data_(.*?)_clean", filename).group(1)
+        run_label = re.search(r"watch_data_(.*?)_processed", filename).group(1) # TODO
         shortened.append(run_label)
 
     return "_".join(shortened)
@@ -184,11 +190,12 @@ def has_matching_parameters(filename, pretty_values):
 
 if __name__ == "__main__":
     save_dir = "./results/"
-    predict_columns = ["fcv1_i"]
 
     args, pretty_args = cli_parser()
 
-    csv_filename = save_dir + shorten_parquet_files(args.parquet_files) + "_" + args.model + ".csv"
+    predict_columns = args.predict_columns
+
+    csv_filename = save_dir + shorten_parquet_files(args.parquet_files) + "_model_" + args.model + "_cols_" + "_".join(args.predict_columns) + ".csv"
 
 
     if not has_matching_parameters(csv_filename, list(vars(pretty_args).values())):
