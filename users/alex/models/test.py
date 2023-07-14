@@ -259,3 +259,6 @@ if __name__ == "__main__":
 
 
         save_data(csv_filename, pretty_args, label_list, mse_list, mae_list, mape_list, n_list)
+
+    else:
+        print("skipping")
