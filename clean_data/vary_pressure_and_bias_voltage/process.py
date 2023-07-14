@@ -4,7 +4,8 @@ import argparse
 import pandas as pd
 
 put_data_dir = "../../processed_data/vary_pressure_and_bias_voltage/"
-suffix = "_processed"
+new_suffix = "_processed"
+old_suffix = "_clean"
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description="Processes data files.")
@@ -16,7 +17,7 @@ args = parser.parse_args()
 # Get rid of all the spaces
 for file_path in args.file_paths:
 
-    put_file_path = put_data_dir + os.path.basename(file_path)
+    put_file_path = put_data_dir + os.path.basename(file_path[:-1 * len(old_suffix)]) + new_suffix
 
     data = pd.read_parquet(file_path)
 
