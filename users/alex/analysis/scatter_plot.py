@@ -57,7 +57,7 @@ def save_rotated_scatter_plot(df_list, plot_dir, parquet_filenames_str, x_col, y
 
     # Save pictures for each rotation angle
     for (filename, angle, elevation) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size):
-        ax.set_title(filename, {'fontsize':4})
+        ax.set_title(filename, {'fontsize':6})
         ax.view_init(elev=elevation, azim=angle)
         fig.canvas.draw()
 
