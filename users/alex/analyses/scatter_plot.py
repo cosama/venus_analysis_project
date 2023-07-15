@@ -100,7 +100,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Use regex to extract the run from the filenames
-    shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_clean", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames]
+    shortened_parquet_filenames = [re.search(r"watch_data_(.*?)_processed", os.path.basename(parquet_file)).group(1) for parquet_file in args.filenames] # TODO
     parquet_filenames_str = "_".join(shortened_parquet_filenames)
 
     # Check if we have all the files we want to generate
