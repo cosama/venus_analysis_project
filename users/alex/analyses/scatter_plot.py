@@ -70,7 +70,7 @@ def save_rotated_scatter_plot(df_list, plot_dir, parquet_filenames_str, x_col, y
 
     # Save the images as GIF files for each elevation
     for (filename, angle, elevation) in filename_generator(x_col, y_col, z_col, a_col, parquet_filenames_str, elevations, step_size=360):
-        images[elevation][0].save(plot_dir + filename, save_all=True, append_images=images[elevation][1:], optimize=False, duration=100, loop=0)
+        images[elevation][0].save(plot_dir + filename, save_all=True, append_images=images[elevation][1:], optimize=False, duration=200, loop=0)
 
     plt.close(fig)
 
