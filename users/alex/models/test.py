@@ -15,7 +15,7 @@ import knn
 
 
 def cli_parser():
-    models = ["knn", "xgb"]
+    models = ["knn", "tree"]
 
     parser = argparse.ArgumentParser(description="Test arbitrary models") # TODO stop using argparser and replace with something else
 
@@ -27,22 +27,24 @@ def cli_parser():
     subparsers = parser.add_subparsers(title="Model selector", dest="model", required=True, help="Model to use")
 
     # Create subparsers so we can handle different cli
-    xgb_parser = subparsers.add_parser("xgb", help="Options for xgboost regression")
-    xgb_parser.add_argument("--n_estimators", required=True, type=int, help="Specify the number of estimators to use")
-    xgb_parser.add_argument("--max_depth", required=True, type=int, help="Specify the maximum depth of the tree")
-    xgb_parser.add_argument("--max_leaves", required=True, type=int, help="Specify the maximum number of leaf nodes to use, grows the tree in a best-first fashion")
-    xgb_parser.add_argument("--max_bin", required=True, type=int, help="Specify the maximum number of bins to use for histogram-based tree methods")
-    xgb_parser.add_argument("--grow_policy", required=True, choices=["depthwise", "lossguide"], help="Specify the tree growing policy, 0: favor splitting near root, 1: favor splitting at nodes with highest loss change")
-    xgb_parser.add_argument("--learning_rate", required=True, type=float, help="Specify the boosting's learning rate")
-    xgb_parser.add_argument("--objective", required=True, choices=["reg:squarederror", "reg:squaredlogerror", "reg:pseudohubererror", "reg:absoluteerror"], help="Specify the learning task and corresponding learning objective")
-    xgb_parser.add_argument("--tree_method", required=True, choices=["exact", "hist"], help="Specify the tree construction algorithm to use")
-    xgb_parser.add_argument("--reg_alpha", required=True, type=float, help="Specify the L1 regularization term on weights")
-    xgb_parser.add_argument("--reg_lambda", required=True, type=float, help="Specify the L2 regularization term on weights")
-    xgb_parser.add_argument("--subsample", required=True, type=float, help="Specify the fraction of random selection of rows")
-    xgb_parser.add_argument("--colsample_bynode", required=True, type=float, help="Specify the fraction of columns to randomly sample at each node split")
-    xgb_parser.add_argument("--colsample_bytree", required=True, type=float, help="Specify the fraction of columns to randomly sample at the creation of each tree")
-    xgb_parser.add_argument("--num_boost_round", required=True, type=int, help="Specify the number of boosting iterations")
-    xgb_parser.add_argument("--num_parallel_tree", required=True, type=int, help="Specify the number of trees to train in parallel")
+    tree_parser = subparsers.add_parser("tree", help="Options for decision tree")
+    tree_parser.add_argument("--importance", action="store_true", help="Print the importance of each of the features")
+
+    tree_parser.add_argument("--n_estimators", required=True, type=int, help="Specify the number of estimators to use")
+    tree_parser.add_argument("--max_depth", required=True, type=int, help="Specify the maximum depth of the tree")
+    tree_parser.add_argument("--max_leaves", required=True, type=int, help="Specify the maximum number of leaf nodes to use, grows the tree in a best-first fashion")
+    tree_parser.add_argument("--max_bin", required=True, type=int, help="Specify the maximum number of bins to use for histogram-based tree methods")
+    tree_parser.add_argument("--grow_policy", required=True, choices=["depthwise", "lossguide"], help="Specify the tree growing policy, 0: favor splitting near root, 1: favor splitting at nodes with highest loss change")
+    tree_parser.add_argument("--learning_rate", required=True, type=float, help="Specify the boosting's learning rate")
+    tree_parser.add_argument("--objective", required=True, choices=["reg:squarederror", "reg:squaredlogerror", "reg:pseudohubererror", "reg:absoluteerror"], help="Specify the learning task and corresponding learning objective")
+    tree_parser.add_argument("--tree_method", required=True, choices=["exact", "hist"], help="Specify the tree construction algorithm to use")
+    tree_parser.add_argument("--reg_alpha", required=True, type=float, help="Specify the L1 regularization term on weights")
+    tree_parser.add_argument("--reg_lambda", required=True, type=float, help="Specify the L2 regularization term on weights")
+    tree_parser.add_argument("--subsample", required=True, type=float, help="Specify the fraction of random selection of rows")
+    tree_parser.add_argument("--colsample_bynode", required=True, type=float, help="Specify the fraction of columns to randomly sample at each node split")
+    tree_parser.add_argument("--colsample_bytree", required=True, type=float, help="Specify the fraction of columns to randomly sample at the creation of each tree")
+    tree_parser.add_argument("--num_boost_round", required=True, type=int, help="Specify the number of boosting iterations")
+    tree_parser.add_argument("--num_parallel_tree", required=True, type=int, help="Specify the number of trees to train in parallel")
 
     knn_parser = subparsers.add_parser("knn", help="Options for k nearest neighbor regression")
     knn_parser.add_argument("--num_neighbors", required=True, type=int, help="Specify the number of neighbors to use")
@@ -67,6 +69,7 @@ def cli_parser():
     delattr(pretty_args, "parquet_files")
     delattr(pretty_args, "predict_columns")
     delattr(pretty_args, "model")
+    delattr(pretty_args, "importance")
     delattr(pretty_args, "dummy")
 
     if "knn" == args.model:
@@ -110,12 +113,12 @@ def process_dataframes(df_list, input_columns, predict_columns):
 
 
 def create_model(model_args):
-    irrelevant_list = ["parquet_files", "model", "predict_columns", "dummy"] # TODO?
+    irrelevant_list = ["parquet_files", "model", "predict_columns", "importance", "dummy"] # TODO?
     model_type = model_args.model
     if model_type == "knn":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
         return knn.KNNRegressor(**relevant_args)
-    elif model_type == "xgb":
+    elif model_type == "tree":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
         return xgboost.XGBRegressor(**relevant_args)
     else:
@@ -266,6 +269,9 @@ if __name__ == "__main__":
 
 
         save_data(csv_filename, pretty_args, label_list, mse_list, mae_list, mape_list, n_list)
+
+        if args.importance:
+            print(model.feature_importances_)
 
     else:
         print("skipping")
