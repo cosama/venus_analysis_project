@@ -69,8 +69,10 @@ def cli_parser():
     delattr(pretty_args, "parquet_files")
     delattr(pretty_args, "predict_columns")
     delattr(pretty_args, "model")
-    delattr(pretty_args, "importance")
     delattr(pretty_args, "dummy")
+
+    if "tree" == args.model:
+        delattr(pretty_args, "importance")
 
     if "knn" == args.model:
         weights = []
