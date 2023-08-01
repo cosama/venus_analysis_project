@@ -272,7 +272,7 @@ if __name__ == "__main__":
 
         save_data(csv_filename, pretty_args, label_list, mse_list, mae_list, mape_list, n_list)
 
-        if args.importance:
+        if "tree" == args.model and args.importance:
             print(model.feature_importances_)
 
     else:
