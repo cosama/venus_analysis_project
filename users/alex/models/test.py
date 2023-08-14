@@ -7,10 +7,8 @@ import sys
 
 import numpy as np
 import pandas as pd
-import xgboost
-from tqdm import tqdm
 
-import knn
+import models
 
 
 
@@ -119,10 +117,10 @@ def create_model(model_args):
     model_type = model_args.model
     if model_type == "knn":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
-        return knn.KNNRegressor(**relevant_args)
+        return models.KNN_Regressor(**relevant_args)
     elif model_type == "tree":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
-        return xgboost.XGBRegressor(**relevant_args)
+        return models.Tree_Regressor(**relevant_args)
     else:
         raise ValueError("invalid model type")
 
@@ -212,45 +210,8 @@ if __name__ == "__main__":
 
         x_df_list, y_df_list = process_dataframes(df_list, input_columns, predict_columns)
 
-        # make lists to store all the data
-        label_list = []
-        mse_list = []
-        mae_list = []
-        mape_list = []
-        n_list = []
-
-        # K fold on each of the dataframes
-        for i, _ in enumerate(df_list):
-            # Get testing data
-            x_test = x_df_list[i]
-            y_test = y_df_list[i]
-
-            # Get training data
-            x_train = np.concatenate(x_df_list[:i] + x_df_list[i + 1:])
-            y_train = np.concatenate(y_df_list[:i] + y_df_list[i + 1:])
-
-            # Create and train model
-            model = create_model(args)
-            model.fit(x_train, y_train)
-
-            # Predict on the test data with a progress bar
-            y_pred = np.zeros_like(y_test)
-            y_len = len(y_pred)
-            for j, x in tqdm(enumerate(x_test), total=y_len, desc="Predicting"):
-                new_x = x.reshape(1, -1)
-                y_pred[j] = model.predict(new_x)
-
-            # Calculate mean losses
-            mse_loss = np.mean((y_pred - y_test) ** 2)
-            mae_loss = np.mean(np.abs(y_pred - y_test))
-            mape_loss = np.mean(np.abs((y_pred - y_test) / y_test)) * 100
-
-            label_list.append(os.path.basename(args.parquet_files[i]))
-            mse_list.append(mse_loss)
-            mae_list.append(mae_loss)
-            mape_list.append(mape_loss)
-            n_list.append(y_len)
-
+        model = create_model(args)
+        label_list, mse_list, mae_list, mape_list, n_list = model.k_fold_cross_validation(x_df_list, y_df_list, args.parquet_files)
 
         def weighted_average(val_list, count_list):
             total = 0
@@ -262,13 +223,12 @@ if __name__ == "__main__":
 
             return(total/total_count)
 
-
+        # Aggregate statistics
         label_list = ["agg"] + label_list
         mse_list = [weighted_average(mse_list, n_list)] + mse_list
         mae_list = [weighted_average(mae_list, n_list)] + mae_list
         mape_list = [weighted_average(mape_list, n_list)] + mape_list
         n_list = [sum(n_list)] + n_list
-
 
         save_data(csv_filename, pretty_args, label_list, mse_list, mae_list, mape_list, n_list)
 
