@@ -15,12 +15,14 @@ import models
 def cli_parser():
     models = ["knn", "tree"]
 
-    parser = argparse.ArgumentParser(description="Test arbitrary models") # TODO stop using argparser and replace with something else
+    # TODO stop using argparser and replace with something else
+    # TODO weird bug when we do --fcv1_i it thinks we did --fcv1_in
+    parser = argparse.ArgumentParser(description="Test arbitrary models")
 
     parser.add_argument("--parquet_files", required=True, nargs="+", help="Parquet files")
     parser.add_argument("--predict_columns", default=["fcv1_i"], nargs="+", help="Column to predict")
 
-    parser.add_argument("--dummy", help="dummy variable bc python argparser is dumb")
+    parser.add_argument("--dummy", help="dummy variable so argparser knows when to take model argument")
 
     subparsers = parser.add_subparsers(title="Model selector", dest="model", required=True, help="Model to use")
 
@@ -48,15 +50,17 @@ def cli_parser():
     knn_parser.add_argument("--num_neighbors", required=True, type=int, help="Specify the number of neighbors to use")
     knn_parser.add_argument("--to_normalize", required=True, type=int, help="Specify the whether to normalize the input data (0: False, 1: True)")
 
-    # TODO rewrite to be modular, maybe have an extract_column_names function, but would then also have to extract a parquet file multiple times, idk, think about it
+    cheat_parser = subparsers.add_parser("cheat", help="Options for cheat model")
+
+    # parse the known args
     tmp_args, _ = parser.parse_known_args()
 
+    # check to make sure we have enough files
     if 2 > len(tmp_args.parquet_files):
         raise(ValueError("parquet_files argument must have at least 2 values"))
 
-    # dynamically generate valid column names
+    # get the file columns
     column_names = list(filter(lambda x: x not in tmp_args.predict_columns, pd.read_parquet(tmp_args.parquet_files[0], engine="fastparquet").columns)) # TODO clean up
-    # TODO weird bug when we do --fcv1_i it thinks we did --fcv1_in
 
     for column in column_names:
         knn_parser.add_argument(f"--{column}", default=0, type=float, help=f"Specify the weight value for {column} (default: 0)")
@@ -121,6 +125,9 @@ def create_model(model_args):
     elif model_type == "tree":
         relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
         return models.Tree_Regressor(**relevant_args)
+    elif model_type == "cheat":
+        relevant_args = {k: v for k, v in vars(model_args).items() if k not in irrelevant_list}
+        return models.Cheat_Regressor(**relevant_args)
     else:
         raise ValueError("invalid model type")
 
