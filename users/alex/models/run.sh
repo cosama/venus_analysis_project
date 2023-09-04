@@ -1,0 +1,2 @@
+./knn.sh
+./tree.sh
