@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
@@ -19,7 +19,7 @@ class VenusDataset(Dataset):
                  file_path: str,
                  input_columns: List[str],
                  output_columns: List[str],
-                 run_id: Optional[float] = None,
+                 run_selection: Union[float, List[float]] = None,
                  preprocess_data: str = None,
                  smoothing_window: Optional[int] = None,
                  make_differential: bool = False) -> None:
@@ -30,7 +30,7 @@ class VenusDataset(Dataset):
             file_path (str): Path to the .csv or .parquet file.
             input_columns (List[str]): List of column names to be used as input features.
             output_columns (List[str]): List of column names to be used as output features.
-            run_id (Optional[int]): Int to select only data from "run_id"
+            run_selection (Optional[int]): int or list[int] to select which runs to include
             preprocess_data (str): Preprocess dataset by "standardize" or "min-max", None to disable
             smoothing_window (Optional[int]): Window size for smoothing, None to disable
             make_differential (bool): If True, convert data to differential format
@@ -47,8 +47,13 @@ class VenusDataset(Dataset):
         else:
             raise ValueError(f"Invalid file type: {file_path}. File must be a .csv or .parquet file")
 
-        if run_id is not None:
-            self.df = self.df[self.df["run_id"] == run_id]
+        if run_selection is not None:
+            if type(run_selection) in [int, float]:
+                self.df = self.df[self.df["run_id"] == run_selection]
+            elif type(run_selection) == List[float]:
+                self.df = self.df[self.df["run_id"].isin(run_selection)]
+            else:
+                raise ValueError(f"Invalid run selection: {run_selection}. Must be float or List[float]")
         if preprocess_data is not None:
             if preprocess_data == "standardize":
                 self.df = (self.df - self.df.mean()) / self.df.std()
@@ -57,12 +62,12 @@ class VenusDataset(Dataset):
             else:
                 raise ValueError(f"Invalid preprocess: {preprocess_data}. Must be \'standardize\' or \'min-max\'")
         if smoothing_window is not None:
-            self.df = self.df.rolling(window=smoothing_window).mean().dropna()
+            self.df = self.df.rolling(window=smoothing_window).mean()
         if make_differential:
-            self.df = self.df.diff().dropna()
+            self.df = self.df.diff()
 
-        self.inputs = self.df[input_columns]
-        self.outputs = self.df[output_columns]
+        self.inputs = self.df[input_columns].fillna(0)
+        self.outputs = self.df[output_columns].fillna(0)
 
     def __len__(self) -> int:
         return len(self.df)
@@ -96,7 +101,7 @@ class VenusTimeSeriesDataset(Dataset):
                  file_path: str,
                  input_columns: List[str],
                  output_columns: List[str],
-                 run_id: Optional[float] = None,
+                 run_selection: Union[float, List[float]] = None,
                  preprocess_data: str = None,
                  smoothing_window: Optional[int] = None,
                  make_differential: bool = False,
@@ -111,7 +116,7 @@ class VenusTimeSeriesDataset(Dataset):
             file_path (str): Path to the .csv or .parquet file.
             input_columns (List[str]): List of column names to be used as input features.
             output_columns (List[str]): List of column names to be used as output features.
-            run_id (Optional[int]): Int to select only data from "run_id"
+            run_selection (Optional[float, List[float]): int or list[int] to select which runs to include
             preprocess_data (str): Preprocess dataset by "standardize" or "min-max", None to disable
             smoothing_window (Optional[int]): Window size for smoothing, None to disable
             make_differential (bool): If True, convert data to differential format
@@ -129,8 +134,13 @@ class VenusTimeSeriesDataset(Dataset):
             self.df = pd.read_parquet(file_path)
         else:
             raise ValueError(f"Invalid file type: {file_path}. File must be a .csv or .parquet file")
-        if run_id is not None:
-            self.df = self.df[self.df["run_id"] == run_id]
+        if run_selection is not None:
+            if type(run_selection) in [int, float]:
+                self.df = self.df[self.df["run_id"] == run_selection]
+            elif type(run_selection) == List[float]:
+                self.df = self.df[self.df["run_id"].isin(run_selection)]
+            else:
+                raise ValueError(f"Invalid run selection: {run_selection}. Must be float or List[float]")
         if preprocess_data is not None:
             if preprocess_data == "standardize":
                 self.df = (self.df - self.df.mean()) / self.df.std()
