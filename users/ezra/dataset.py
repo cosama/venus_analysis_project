@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
 
@@ -88,9 +88,9 @@ class VenusDataset(Dataset):
 class VenusTimeSeriesDataset(Dataset):
     """
     Custom dataset that can read from .csv or .parquet files and
-    apply data preprocessing, smoothing, and differential conversion.
-    Includes time-series specific feature engineering like rolling window statistics
-    and lag features.
+    apply various data transforms. Includes time-series specific feature engineering
+    like rolling window statistics and lag features as well as ability to return sequence
+    for sequential models.
 
     Attributes:
         df : pandas dataframe containing dataset
@@ -105,8 +105,9 @@ class VenusTimeSeriesDataset(Dataset):
                  preprocess_data: str = None,
                  smoothing_window: Optional[int] = None,
                  make_differential: bool = False,
-                 lag_steps: int = None,
-                 rolling_window_stats: int = None
+                 lag_steps: Optional[int] = None,
+                 rolling_window_stats: int = None,
+                 sequence_length: Optional[int] = None
                  ) -> None:
 
         """
@@ -121,7 +122,8 @@ class VenusTimeSeriesDataset(Dataset):
             smoothing_window (Optional[int]): Window size for smoothing, None to disable
             make_differential (bool): If True, convert data to differential format
             lag_steps (int): Number of lag step features to include, None to disable
-            rolling_window_stats: Window size for rolling statistics to be calculated over, None to disable
+            rolling_window_stats (Optional[int]): Window size for rolling statistics, None to disable
+            sequence_length (Optional[int]): If true, returns sequence starting at idx with __get__, None to disable
 
         Raises:
             ValueError: If file extension is not supported or invalid preprocess type
@@ -164,18 +166,19 @@ class VenusTimeSeriesDataset(Dataset):
                 self.df[f'{col}_rolling_mean'] = self.df[col].rolling(window=rolling_window_stats).mean()
                 self.df[f'{col}_rolling_std'] = self.df[col].rolling(window=rolling_window_stats).std()
 
+        self.sequence_length = sequence_length if sequence_length else 0
         self.inputs = self.df[[col for col in self.df.columns if col.startswith(tuple(input_columns))]].fillna(0)
         self.outputs = self.df[output_columns].fillna(0)
 
     def __len__(self) -> int:
-        return len(self.inputs)
+        return len(self.inputs) - self.sequence_length # i.e. 100 items, 10 seq length, can only index up to item 91
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        inputs = self.inputs.iloc[idx]
-        outputs = self.outputs.iloc[idx]
+        inputs = self.inputs.iloc[idx:idx+self.sequence_length] if self.sequence_length else self.inputs.iloc[idx]
+        outputs = self.outputs.iloc[idx+self.sequence_length] if self.sequence_length else self.outputs.iloc[idx]
 
         inputs = torch.tensor(inputs.values, dtype=torch.float32)
         outputs = torch.tensor(outputs.values, dtype=torch.float32)
