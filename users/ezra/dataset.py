@@ -1,6 +1,6 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Sequence
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, random_split, Subset
 import pandas as pd
 
 
@@ -89,7 +89,7 @@ class VenusTimeSeriesDataset(Dataset):
     """
     Custom dataset that can read from .csv or .parquet files and
     apply various data transforms. Includes time-series specific feature engineering
-    like rolling window statistics and lag features as well as ability to return sequence
+    like rolling window statistics and lag features as well as ability to return a sequence
     for sequential models.
 
     Attributes:
@@ -171,7 +171,7 @@ class VenusTimeSeriesDataset(Dataset):
         self.outputs = self.df[output_columns].fillna(0)
 
     def __len__(self) -> int:
-        return len(self.inputs) - self.sequence_length # i.e. 100 items, 10 seq length, can only index up to item 91
+        return len(self.inputs) - self.sequence_length
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -184,3 +184,26 @@ class VenusTimeSeriesDataset(Dataset):
         outputs = torch.tensor(outputs.values, dtype=torch.float32)
 
         return inputs, outputs
+
+    def split(self, lengths: Sequence[float]):
+        """
+        Method to split into ordered train/validation subsets. Does not
+        respect division between runs.
+        Args:
+            lengths (Sequence[float]):
+
+        Returns:
+            train_data: Training Subset
+            val_data: Validation Subset
+
+        """
+        assert len(lengths) == 2, "Lengths must be of size 2"
+        assert sum(lengths) == 1, "Lengths must sum to 1"
+        total_size = len(self)
+        split_point = int(lengths[0] * total_size)
+
+        train_data = Subset(self, range(split_point))
+        val_data = Subset(self, range(split_point, total_size))
+        print(total_size, len(train_data), len(val_data), len(train_data) + len(val_data))
+
+        return train_data, val_data
