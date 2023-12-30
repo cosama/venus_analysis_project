@@ -12,7 +12,7 @@ def read_file(file_path: str):
         file_path (str): path to file
 
     Returns:
-        pandas dataframe containing file contents
+        A pandas dataframe containing file contents
     Raises:
             ValueError: If file extension is not supported
             FileNotFoundError: If file is not found at the given path.
@@ -146,4 +146,10 @@ class VenusDataset(Dataset):
         return df
 
     def to_numpy(self):
+        """
+        Get numpy arrays containing the data for use with sci-kit learn models using .fit(X_data, y_data)
+        Returns:
+            A tuple containing numpy arrays for the inputs and outputs
+
+        """
         return self.inputs.values, self.outputs.values

@@ -1,7 +1,5 @@
 from typing import Union, Sequence, Callable, Tuple, Optional
-
 import pandas as pd
-import numpy as np
 
 
 def select_rows(df: pd.DataFrame, column_name: str, value: Union[float, Sequence[float]],
