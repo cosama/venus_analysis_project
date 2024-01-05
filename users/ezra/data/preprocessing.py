@@ -1,5 +1,48 @@
-from typing import Union, Sequence, Callable, Tuple, Optional
+from typing import Union, Sequence, Callable, Tuple, Optional, List
 import pandas as pd
+
+
+def read_file(file_path: str):
+    """
+    Reads .csv or .parquet file into a pandas dataframe
+    Args:
+        file_path (str): path to file
+
+    Returns:
+        A pandas dataframe containing file contents
+    Raises:
+            ValueError: If file extension is not supported
+            FileNotFoundError: If file is not found at the given path.
+    """
+    if file_path.endswith('.csv'):
+        return pd.read_csv(file_path)
+    elif file_path.endswith('.parquet'):
+        return pd.read_parquet(file_path)
+    else:
+        raise ValueError(f"Invalid file type: {file_path}. File must be a .csv or .parquet file")
+
+
+def run_select(df: pd.DataFrame, run_selection: Union[float, Sequence[float]]) -> pd.DataFrame:
+    """
+    Select the desired runs for the dataset
+    Args:
+        df (pd.DataFrame): Full dataset
+        run_selection (Union[float, Sequence[float]]): desired runs
+
+    Returns:
+        A new dataframe with only the selected runs
+
+    Raises:
+        ValueError: if an invalid form of run selection is inputted
+    """
+
+    if type(run_selection) in [int, float]:
+        comparator = lambda col, value: df == value
+    elif type(run_selection) is List[float]:
+        comparator = lambda col, values: df.isin(values)
+    else:
+        raise ValueError(f"Invalid run selection: {run_selection}. Must be float or List[float]")
+    return select_rows(df, "run_id", run_selection, comparator)
 
 
 def select_rows(df: pd.DataFrame, column_name: str, value: Union[float, Sequence[float]],
@@ -56,7 +99,7 @@ def min_max_scale(df: pd.DataFrame, min_val: Optional[pd.Series] = None,
         A tuple containing the scaled dataframe as well as the parameters used to scale it. In the following form:
         (scaled_df, (min_val, max_val))
     """
-    assert type(min_val) == type(max_val), "min_val and max_val should both be pd.Series or both be None"
+    assert type(min_val) is type(max_val), "min_val and max_val should both be pd.Series or both be None"
     if min_val is None:
         min_val, max_val = df.min(), df.max()
     df = (df - min_val) / (max_val - min_val)

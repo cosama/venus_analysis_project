@@ -2,50 +2,7 @@ from typing import List, Optional, Union, Sequence, Tuple, Callable
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from preprocessing import select_rows
-
-
-def read_file(file_path: str):
-    """
-    Reads .csv or .parquet file into a pandas dataframe
-    Args:
-        file_path (str): path to file
-
-    Returns:
-        A pandas dataframe containing file contents
-    Raises:
-            ValueError: If file extension is not supported
-            FileNotFoundError: If file is not found at the given path.
-    """
-    if file_path.endswith('.csv'):
-        return pd.read_csv(file_path)
-    elif file_path.endswith('.parquet'):
-        return pd.read_parquet(file_path)
-    else:
-        raise ValueError(f"Invalid file type: {file_path}. File must be a .csv or .parquet file")
-
-
-def run_select(df: pd.DataFrame, run_selection: Union[float, Sequence[float]]) -> pd.DataFrame:
-    """
-    Select the desired runs for the dataset
-    Args:
-        df (pd.DataFrame): Full dataset
-        run_selection (Union[float, Sequence[float]]): desired runs
-
-    Returns:
-        A new dataframe with only the selected runs
-
-    Raises:
-        ValueError: if an invalid form of run selection is inputted
-    """
-
-    if type(run_selection) in [int, float]:
-        comparator = lambda col, value: df == value
-    elif type(run_selection) == List[float]:
-        comparator = lambda col, values: df.isin(values)
-    else:
-        raise ValueError(f"Invalid run selection: {run_selection}. Must be float or List[float]")
-    return select_rows(df, "run_id", run_selection, comparator)
+from preprocessing import run_select, read_file
 
 
 class VenusDataset(Dataset):
@@ -71,9 +28,8 @@ class VenusDataset(Dataset):
                  input_columns: List[str],
                  output_columns: List[str],
                  run_selection: Union[int, float, Sequence[float]] = None,
-                 scaler: Callable[[pd.DataFrame, Optional[pd.Series], Optional[pd.Series]],
-                                  Tuple[pd.DataFrame, Tuple[pd.Series, pd.Series]]] = None,
-                 transforms:  Sequence[Callable[[pd.DataFrame], pd.DataFrame]] = None,
+                 scaler: Callable[[pd.DataFrame, Optional[pd.Series], Optional[pd.Series]], Tuple[pd.DataFrame, Tuple[pd.Series, pd.Series]]] = None,
+                 transforms: Sequence[Callable[[pd.DataFrame], pd.DataFrame]] = None,
                  sequence_length: int = 0
                  ):
         """
