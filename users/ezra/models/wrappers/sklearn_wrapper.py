@@ -53,13 +53,12 @@ class SklearnWrapper:
         predictions = self.predict(inputs)
         return self.eval_metric(outputs, predictions)
 
-    def train(self, dataset: VenusDataset, epochs: Optional[int] = 1):
+    def train(self, dataset: VenusDataset):
         """
             Trains the model using the provided training data.
 
             Args:
                 dataset (VenusDataset): Training data features
-                epochs (int, optional): parameter to be consistent with PyTorch wrapper
         """
         inputs, outputs = dataset.to_numpy()
         self.model.fit(inputs, outputs.ravel())

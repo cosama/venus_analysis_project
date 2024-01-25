@@ -1,4 +1,4 @@
-from typing import Callable, Type, Sequence
+from typing import Callable, Type, Sequence, Tuple
 
 import torch
 from torch import nn
@@ -46,7 +46,7 @@ class BaseMLP(PyTorchWrapper):
     """
     def __init__(self, model_parameters: dict, optimizer_parameters: dict, optimizer: Type[Optimizer],
                  loss_function: Callable[[torch.Tensor, torch.Tensor], torch.tensor],
-                 device: str = "cpu"):
+                 training_parameters: Sequence[int, int, str] = (1, 8, "cpu")):
         """
         Initializes a wrapped Multilayer Perceptron
         Args:
@@ -54,9 +54,9 @@ class BaseMLP(PyTorchWrapper):
             optimizer_parameters (dict): Parameters to initialize the optimizer
             optimizer (Type[Optimizer]): Which optimizer to use
             loss_function: criterion to optimize on
-            device: what device to compute on
+            training_parameters (Tuple[int, int, str]): Epoch, Batch Size, Device
         """
         model = _mlp(**model_parameters)
         optimizer = optimizer(model.parameters(), **optimizer_parameters)
-        super().__init__(model, loss_function, optimizer, device)
+        super().__init__(model, loss_function, optimizer, training_parameters)
 
