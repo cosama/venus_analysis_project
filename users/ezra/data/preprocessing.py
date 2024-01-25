@@ -22,7 +22,7 @@ def read_file(file_path: str):
         raise ValueError(f"Invalid file type: {file_path}. File must be a .csv or .parquet file")
 
 
-def run_select(df: pd.DataFrame, run_selection: Union[float, Sequence[float]]) -> pd.DataFrame:
+def run_select(df: pd.DataFrame, run_selection: Union[int, float, Sequence[Union[int, float]]]) -> pd.DataFrame:
     """
     Select the desired runs for the dataset
     Args:
@@ -35,34 +35,13 @@ def run_select(df: pd.DataFrame, run_selection: Union[float, Sequence[float]]) -
     Raises:
         ValueError: if an invalid form of run selection is inputted
     """
-
     if type(run_selection) in [int, float]:
-        comparator = lambda col, value: df == value
-    elif type(run_selection) is List[float]:
-        comparator = lambda col, values: df.isin(values)
+        mask = df["run_id"] == run_selection
+    elif type(run_selection) in [list, tuple]:
+        mask = df["run_id"].isin(run_selection)
     else:
-        raise ValueError(f"Invalid run selection: {run_selection}. Must be float or List[float]")
-    return select_rows(df, "run_id", run_selection, comparator)
-
-
-def select_rows(df: pd.DataFrame, column_name: str, value: Union[float, Sequence[float]],
-                comparator: Callable[[pd.DataFrame, Union[float, Sequence[float]]], bool]) -> pd.DataFrame:
-    """
-    Selects columns from a Dataframe based on a value and a given comparator function. It is important that
-    the comparator function works with the type of value used (i.e. a single value or sequence of values)
-    Args:
-        df: The dataframe to select from
-        column_name (str): The name of the column to use with comparator
-        value (Union[float, Sequence[float]]): The value to compare with
-        comparator (Callable[[pd.DataFrame, int], bool]): A function that takes in a dataframe and a value,
-         and returns a boolean mask
-
-    Returns:
-        new_df (pd.DataFrame): A new dataframe consisting of the selected rows
-    """
-    mask = comparator(df[column_name], value)
-    new_df = df[mask]
-    return new_df
+        raise ValueError(f"Invalid run selection: {run_selection}. Must be int, float, Sequence[Union[float, int]]")
+    return df[mask]
 
 
 def standardize(df: pd.DataFrame, mean: Optional[pd.Series] = None,
@@ -78,7 +57,7 @@ def standardize(df: pd.DataFrame, mean: Optional[pd.Series] = None,
         A tuple containing the standardized dataframe as well as the parameters used to scale it. In the following form:
         (scaled_df, (mean, std))
     """
-    assert type(mean) == type(std), "mean and std should both be pd.Series or both be None"
+    assert type(mean) is type(std), "mean and std should both be pd.Series or both be None"
     if mean is None:
         mean, std = df.min(), df.max()
     scaled_df = (df - mean) / std

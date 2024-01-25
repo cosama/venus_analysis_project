@@ -2,7 +2,7 @@ from typing import List, Optional, Union, Sequence, Tuple, Callable
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
-from preprocessing import run_select, read_file
+from .preprocessing import run_select, read_file
 
 
 class VenusDataset(Dataset):
@@ -10,7 +10,7 @@ class VenusDataset(Dataset):
      Custom dataset that can read from .csv or .parquet files. Includes functionality to pass in a scaler and
      transforms to preprocess dataset. Stores scaling parameters in order to apply them to test/validation datasets
 
-     If the sequence length is set to anything but the default 0, then this functions as a time-series dataset, where
+     If the sequence length is set to anything but the default 0, then this functions as a time-series style dataset, where
      a sequence of inputs leading up to a target output is returned from __getitem__ instead of all inputs and outputs
      at a single timestep. The __len__ method is also modified so there are no invalid accesses.
 
@@ -51,7 +51,7 @@ class VenusDataset(Dataset):
             self.df = run_select(self.df, run_selection)
         if scaler:
             self.scale_function = scaler
-            self.df, self.scale_params = scaler(self.df)
+            self.df, self.scale_params = scaler(self.df, None, None)
         if transforms:
             self.transforms = transforms
             for transform in transforms:
@@ -63,6 +63,9 @@ class VenusDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.df) - self.sequence_length
+
+    def dataset_size(self) -> int:
+        return len(self.df)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -109,3 +112,13 @@ class VenusDataset(Dataset):
 
         """
         return self.inputs.values, self.outputs.values
+
+    def to_tensor(self):
+        """
+        Get torch tensors containing the data
+        Returns:
+            A tuple containing numpy arrays for the inputs and outputs
+
+        """
+        inputs, outputs = self.to_numpy()
+        return torch.tensor(inputs, dtype=torch.float32), torch.tensor(outputs, dtype=torch.float32)
