@@ -8,14 +8,14 @@ from .wrappers import SklearnWrapper
 
 class RandomForest(SklearnWrapper):
     """
-    Random Forest wrapped in SklearnWrapper
+    Random Forest Regressor wrapped in SklearnWrapper
     """
-    def __init__(self, model_parameters: dict, evaluation_metric: Optional[Callable[[array, array], float]] = None):
+    def __init__(self, hyperparameters: dict, evaluation_metric: Optional[Callable[[array, array], float]] = None):
         """
-        Instantiates a wrapped Random Forest
+        Initializes a wrapped Random Forest
         Args:
-            model_parameters: parameters to define the random forest model
-            evaluation_metric: metric used to evaluate the model
+            hyperparameters (dict): hyperparameters to define the random forest model
+            evaluation_metric (Callable): metric used to evaluate the model
         """
-        model = RandomForestRegressor(**model_parameters)
+        model = RandomForestRegressor(**hyperparameters)
         super().__init__(model, evaluation_metric)

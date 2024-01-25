@@ -43,18 +43,17 @@ class EvaluationManager:
         val_config["run_selection"] = validation_runs
         return VenusDataset(**train_config), VenusDataset(**val_config)
 
-    def train_all(self, dataset: VenusDataset, epochs: int = 1) -> List[float]:
+    def train_all(self, dataset: VenusDataset) -> List[float]:
         """
         Trains each model on the given dataset
         Args:
             dataset: The given dataset
-            epochs: Epochs to train pytorch models
 
         Returns:
             Evaluation metric for training set
         """
         for model in self.models:
-            model.train(dataset, epochs=epochs)
+            model.train(dataset)
         return self.evaluate_all(dataset)
 
     def evaluate_all(self, dataset: VenusDataset) -> List[float]:
