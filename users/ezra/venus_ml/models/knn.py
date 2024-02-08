@@ -1,7 +1,7 @@
 from typing import Optional, Callable
 
 from numpy import array
-from sklearn.neighbors import  KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor
 
 from .wrappers import SklearnWrapper
 

@@ -68,7 +68,7 @@ class EvaluationManager:
             errors.append(model.evaluate(dataset))
         return errors
 
-    def cross_evaluate(self, runs=(5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 10.0)):
+    def k_fold_cv(self, runs=(5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 10.0)):
         """
         Leave one out cross validation with the given set of runs. Results from each round are saved to self.cv_results
         and can be serialized to a .csv file
