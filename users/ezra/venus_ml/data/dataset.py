@@ -2,6 +2,8 @@ from typing import List, Optional, Union, Sequence, Tuple, Callable
 import torch
 from torch.utils.data import Dataset
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
 
 
 def read_file(file_path: str):
@@ -86,7 +88,7 @@ class VenusDataset(Dataset):
             transforms (Sequence[Callable[[pd.DataFrame], pd.DataFrame]]): list of transform functions
             sequence_length (int): length of sequence to return
         """
-
+        # TODO fix issue where standardizing scales run_id columns so cant be referenced
         self.df = read_file(file_path)
         if run_selection:
             self.df = run_select(self.df, run_selection)
@@ -163,3 +165,56 @@ class VenusDataset(Dataset):
         """
         inputs, outputs = self.to_numpy()
         return torch.tensor(inputs, dtype=torch.float32), torch.tensor(outputs, dtype=torch.float32)
+
+    def get_runs(self, run_ids: Sequence[Union[float, int]]) -> dict:
+        """
+        Retrieves a dictionary of run_ids paired with corresponding data as numpy arrays
+        Args:
+            run_ids (Sequence[Union[float, int]]): Which runs to select
+
+        Returns:
+            A dictionary containing run_ids paired with corresponding data
+        """
+        runs_data = {}
+        for run_id in run_ids:
+            run_df = self.df[self.df["run_id"] == run_id]
+            input_columns = [col for col in run_df.columns if col in self.inputs.columns]
+            output_columns = [col for col in run_df.columns if col in self.outputs.columns]
+            runs_data[run_id] = (run_df[input_columns].to_numpy(), run_df[output_columns].to_numpy())
+        return runs_data
+
+    def get_run_splits(self, run_ids: Sequence[Union[float]], validation_size: Optional[float] = 0.2,
+                       random_state: Optional[int] = None, shuffle=True) -> Tuple:
+        """
+        Retrieves runs data and splits into training and validation sets with the split occurring in each run
+        individually
+        Args:
+            run_ids (Sequence): Which runs to select
+            validation_size (float): Which percentage of data to make validation
+            random_state (int): Optional parameter to set random state, defaults to None
+            shuffle (bool): Whether to shuffle the run before splitting, defaults to True
+
+        Returns:
+            Tuple of numpy arrays containing
+            (train_input, train_output, validation_input, validation_output)
+        """
+        X_train_list, X_val_list, y_train_list, y_val_list = [], [], [], []
+        runs_data = self.get_runs(run_ids)
+        for run_id, (inputs, outputs) in runs_data.items():
+            X_train, X_val, y_train, y_val = train_test_split(
+                inputs, outputs, test_size=validation_size, random_state=random_state, shuffle=shuffle
+            )
+            X_train_list.append(X_train)
+            X_val_list.append(X_val)
+            y_train_list.append(y_train)
+            y_val_list.append(y_val)
+
+        train_inputs = np.concatenate(X_train_list, axis=0)
+        validation_inputs = np.concatenate(X_val_list, axis=0)
+        train_outputs = np.concatenate(y_train_list, axis=0)
+        validation_outputs = np.concatenate(y_val_list, axis=0)
+
+        return train_inputs, train_outputs, validation_inputs, validation_outputs
+
+
+

@@ -24,7 +24,7 @@ class HyperparameterTuner:
         """
         if model_wrapper.framework == "torch":
             self.model = NeuralNetRegressor(model_wrapper.model, device=model_wrapper.device,
-                                            verbose=0, criterion=model_wrapper.criterion)
+                                            verbose=0)
         elif model_wrapper.framework == "sklearn":
             self.model = model_wrapper.model
 
@@ -57,5 +57,5 @@ class HyperparameterTuner:
     def best_model(self):
         if self.searched:
             return self.search.best_estimator_
-        print("Please call tune() to find the best estimator")
+        print("Please call fit() to find the best estimator")
 

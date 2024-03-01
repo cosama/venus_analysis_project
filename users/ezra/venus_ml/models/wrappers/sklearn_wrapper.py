@@ -5,7 +5,6 @@ from numpy import array
 from sklearn.base import BaseEstimator
 from sklearn.metrics import mean_squared_error
 
-
 class SklearnWrapper:
     """
         Wrapper class for scikit-learn models to standardize training, prediction, and evaluation.
@@ -41,26 +40,27 @@ class SklearnWrapper:
             data = data.numpy()
         return torch.tensor(self.model.predict(data))
 
-    def evaluate(self, dataset) -> float:
+    def evaluate(self, inputs, outputs) -> float:
         """
-            Evaluates the model's performance on a dataset
+            Evaluates the model's performance on a given set of input/output pairs
 
             Args:
-                dataset (VenusDataset): The dataset to evaluate the model on
+                 inputs (array): Testing data
+                outputs (array): Testing targets
 
             Returns:
                 float: The evaluation metric of the model on a dataset
         """
-        inputs, outputs = dataset.to_numpy()
+        assert inputs.shape[0] == outputs.shape[0], "Number of inputs samples and outputs samples do not match"
         predictions = self.predict(inputs)
         return self.eval_metric(outputs, predictions)
 
-    def train(self, dataset):
+    def fit(self, inputs, outputs):
         """
             Trains the model using the provided training data.
 
             Args:
-                dataset (VenusDataset): Training data features
+                inputs (array): Training data
+                outputs (array): Training targets
         """
-        inputs, outputs = dataset.to_numpy()
         self.model.fit(inputs, outputs.ravel())
